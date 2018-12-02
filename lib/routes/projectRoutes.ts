@@ -31,6 +31,17 @@ export class ProjectRoutes {
         res.status(200).send(theProject);
       }
     );
+
+    /**
+     * GET host/project/name/:projectId
+     *   get the name of the project with given projectId
+     */
+    this.router.get("/name/:projectId", async (req: Request, res: Response) => {
+      const projectId: string = req.params.projectId;
+      const theProject: Project = await Project.getFromMongo(projectId);
+      const projectName: string = theProject.getName();
+      res.status(200).send(projectName);
+    });
   }
 
   public routes(app: Application): void {

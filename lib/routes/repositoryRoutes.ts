@@ -14,7 +14,10 @@ export class RepositoryRoutes {
       "/",
       Authorization.authenticate,
       async (req: Request, res: Response) => {
-        const reposes: Repository[] = await Repository.getAll(req);
+        const token: string = req.headers.authorization;
+        const reposes: Repository[] = await Repository.getRepositoriesFromGithub(
+          token
+        );
         res.status(200).send(reposes);
       }
     );

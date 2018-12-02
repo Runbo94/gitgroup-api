@@ -44,7 +44,7 @@ export class Owner extends User {
 
     const projects = await Project.getProjectsOfUser(data.node_id);
 
-    const repositories = await Repository.getAll(req);
+    const repositories = await Repository.getRepositoriesFromGithub(token);
 
     const owner = new Owner(data.node_id, data.login, projects, repositories);
     return owner;

@@ -53,7 +53,7 @@ npm run start
   - Function: Create a new project.
   - body: {*name, *description, \*repositories}
   - Note:
-    - Header should have {authorization: user_access_token}
+    - Header should have {authorization: user_access_token}.
   - Response:
     ```JSON
     {
@@ -81,10 +81,41 @@ npm run start
     }
     ```
 
-### User
-
-- _GET /user_ - get the user information who holds this authorization token
+- _/project/name/:projectId_
+  - Function: Get the project name with given the project ID.
+  - Response:
+    ```
+    project_name
+    ```
 
 ### Repository
 
-- _GET /repos_ - get all repositories of the owner
+- _GET /repos_
+  - Function: Get all the repositories of the user
+  - Response:
+    ```JOSN
+    [
+        {
+            "repository_id": "repository_github_node_id",
+            "name": "repository_name",
+            "owner_id": "owner_name",
+            "description": "repository_description",
+            "_url": "https://github.com/owner_name/repository_name",
+            "issues": [
+                {
+                    "issueId": "issue_github_node_id",
+                    "title": "issue_title",
+                    "body": "issue_body",
+                    "owner": "owner_name",
+                    "repos": "repository_name",
+                    "state": "open",
+                    "number": 1
+                }
+            ]
+        }
+    ]
+    ```
+
+### User
+
+- _GET /user_ - get the user information who holds this authorization token

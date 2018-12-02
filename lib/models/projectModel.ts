@@ -208,33 +208,50 @@ export class Project {
   // Static function
   //------------------------------------------------------------------------------
 
+  /**not good: more oop, get project first and then getRepos() */
   /**
    * Given a project ID, get all the names of repositories of that project.
    * @param projectId
    * @returns {string[]} - the list of the names of the repositories
    */
-  public static async getReposNamesOfProject(projectId: string) {
-    const projectMongoData = await ProjectMongo.ProjectMongoModel.findById(
-      projectId
-    );
-    if (!projectMongoData) return [];
-    if (!projectMongoData.repositories) return [];
+
+  public static async getReposNamesOfProject(
+    projectId: string
+  ): Promise<Object[]> {
+    let theProject;
+    try {
+      theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
+    } catch (error) {
+      console.error(
+        "<Error> Fail to find the project in the mongoDB whose _id is " +
+          projectId,
+        error
+      );
+    }
+    if (!theProject) return [];
+    if (!theProject.repositories) return []; // special case return empty array
+
     let result: string[] = [];
-    for (const repos of projectMongoData.repositories) {
+    for (const repos of theProject.repositories) {
       result.push(repos.name);
     }
     return result;
   }
 
-  /*
+  /**
    * Get the projects of the user
    * @param token the access token
    * @param userId the node_id of the user
    */
   public static async getProjectsOfUser(userId: string): Promise<Project[]> {
-    const userMongoData = await UserMongo.UserMongoModel.findOne({
-      node_id: userId
-    });
+    let userMongoData;
+    try {
+      userMongoData = await UserMongo.UserMongoModel.findOne({
+        node_id: userId
+      });
+    } catch (error) {
+      console.error(error);
+    }
     if (!userMongoData) return [];
     if (!userMongoData.projects) return [];
     let result: Project[] = [];
@@ -249,11 +266,63 @@ export class Project {
     return result;
   }
 
-  public static async getFromMongo(projectId: string) {
-    const theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
+  public static async getFromMongo(projectId: string): Promise<Project> {
+    let theProject: {
+      id;
+      name: string;
+      owner_id: string;
+      description: string;
+      repositories: {
+        id;
+        repository_id: string;
+        name: string;
+        owner_id: string;
+        description: string;
+        _url: string;
+      }[];
+      kanbanIds: string[];
+    }; // the data get from the mongoDB
+    try {
+      theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
+    } catch (error) {
+      console.error(
+        "<Error> Fail to find project in the 'projects' document whose _id is " +
+          projectId,
+        error
+      );
+    }
+    // transfer mongo object data to Repository data
+    const repositories: {
+      id;
+      repository_id: string;
+      name: string;
+      owner_id: string;
+      description: string;
+      _url: string;
+    }[] = theProject.repositories.slice(0);
+    const repositoryObjs: Repository[] = [];
+    for (const repository of repositories) {
+      const { repository_id, name, owner_id, description, _url } = repository;
+      const repositoryObj: Repository = new Repository(
+        repository_id,
+        name,
+        owner_id,
+        description,
+        _url
+      );
+      repositoryObjs.push(repositoryObj);
+    }
+
     const { id, name, owner_id, description } = theProject;
-    const kanbanIds = theProject.kanbanIds.slice(0);
-    const repositories = theProject.repositories.slice(0);
-    const project = new Project(id, name, owner_id, description);
+    const kanbanIds: string[] = theProject.kanbanIds.slice(0);
+    const project: Project = new Project(
+      id,
+      name,
+      owner_id,
+      description,
+      repositoryObjs,
+      kanbanIds
+    );
+    return project;
   }
 }
