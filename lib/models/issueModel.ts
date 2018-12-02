@@ -11,13 +11,16 @@ export class Issue {
 
   /**
    * The Issue Constructor
-   * @param id the issue id
+   * @param id the issue ID
    * @param title the title of the issue
    * @param body the text body of the issue
    * @param state the state of the issue: open or close
+   * @param repos the repository name which the issue belongs to
+   * @param state the state of the repository
+   * @param number the number of the repository
    */
   public constructor(
-    id?: string,
+    id?: string, // the issue ID
     title?: string,
     body?: string,
     owner?: string,
@@ -36,52 +39,45 @@ export class Issue {
     this.number = number;
   }
 
-  /**
-   * @returns the id of the issue
-   */
+  //----------------------------------------------------------------------------
+  // Getter and Setter Functions
+  //----------------------------------------------------------------------------
   public getIssueId(): string {
     return this.issueId;
   }
 
-  /**
-   * @returns the title of the issue
-   */
   public getTitle(): string {
     return this.title;
   }
 
-  public getNumber(): number {
-    return this.number;
-  }
-
-  /**
-   * change the issue title
-   * @param title the title of the issue
-   */
   public setTitle(title: string): void {
     this.title = title;
+    //TODO: Set title in the github
   }
 
-  /**
-   * @returns the text body of the issue
-   */
   public getBody(): string {
     return this.body;
   }
 
-  /**
-   * Change the issue body.
-   * @param body the changed body you want of the issue
-   */
   public setBody(body: string): void {
     this.body = body;
+    //TODO: Set body in the github
   }
 
-  /**
-   * @returns the state of the issue("open" or "close").
-   */
+  public getOwner(): string {
+    return this.owner;
+  }
+
+  public getRepos(): string {
+    return this.repos;
+  }
+
   public getState(): string {
     return this.state;
+  }
+
+  public getNumber(): number {
+    return this.number;
   }
 
   /**
@@ -111,34 +107,26 @@ export class Issue {
     )).data;
   }
 
-  public getOwner(): string {
-    return this.owner;
-  }
-
-  public getRepos(): string {
-    return this.repos;
-  }
-
-  /*
-   * save the issue to the GitHub.
-   */
-  public async save(): Promise<any> {
-    const post = {
-      title: this.title,
-      body: this.body
-    };
-    let result: any;
-    try {
-      result = await githubApiPreview.post(
-        `/repos/${this.owner}/${this.repos}/issues`,
-        post
-      );
-      this.issueId = result.data.node_id;
-    } catch (error) {
-      throw error;
-    }
-    return result;
-  }
+  // /*
+  //  * save the issue to the GitHub.
+  //  */
+  // public async save(): Promise<any> {
+  //   const post = {
+  //     title: this.title,
+  //     body: this.body
+  //   };
+  //   let result: any;
+  //   try {
+  //     result = await githubApiPreview.post(
+  //       `/repos/${this.owner}/${this.repos}/issues`,
+  //       post
+  //     );
+  //     this.issueId = result.data.node_id;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  //   return result;
+  // }
 
   //-------------------------------------------------------------------------
   // Static methods

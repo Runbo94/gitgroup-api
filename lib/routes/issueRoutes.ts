@@ -9,6 +9,9 @@ export class IssueRoutes {
   constructor() {
     this.router = Router();
 
+    /**
+     * get all issue of the repository
+     */
     this.router.get("/:name/:repos", async (req: Request, res: Response) => {
       const issues = await Issue.getAllIssues(
         req.params.name,
@@ -17,6 +20,9 @@ export class IssueRoutes {
       res.status(200).send(issues);
     });
 
+    /**
+     * get all issues of the given project
+     */
     this.router.get(
       "/project_issues/:username/:projectId",
       async (req: Request, res: Response) => {

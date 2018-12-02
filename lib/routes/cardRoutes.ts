@@ -1,5 +1,4 @@
 import { Request, Response, Application, Router } from "express";
-import { Authorization } from "./../models/authorization";
 import { Issue } from "../models/issueModel";
 import { Project } from "../models/projectModel";
 import { Card } from "../models/cardModel";
@@ -10,6 +9,7 @@ export class CardRoutes {
   constructor() {
     this.router = Router();
 
+    /**get all the issue card, same with the get issue */
     this.router.get("/:name/:repos", async (req: Request, res: Response) => {
       const issues = await Issue.getAllIssues(
         req.params.name,

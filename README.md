@@ -154,3 +154,44 @@ npm run start
         ]
     }
     ```
+
+### Issue
+
+- _GET /host/issues/:username/:repository_name_
+  - Function: Get all the issues for the repository.
+  - Response:
+    ```JSON
+    [
+        {
+            "issueId": "issue_github_node_id",
+            "title": "issue_name",
+            "body": "issue_body",
+            "owner": "owner_name",
+            "repos": "repository_name",
+            "state": "open",
+            "number": 1
+        }
+    ]
+    ```
+- _GET http://localhost:8000/issues/project\_issues/:username/:projectId_
+  - Function: Get all the issues for the given project ID.
+  - Response:
+    ```JSON
+    [
+        {
+            "issueId": "issue_github_node_id",
+            "title": "issue_name",
+            "body": "issue_body",
+            "owner": "owner_name",
+            "repos": "repository_name",
+            "state": "open",
+            "number": 1
+        }
+    ]
+    ```
+- _GET /close/:userName/:reposName/:issueId_
+  - Function: Close the issue.
+
+### Card
+
+### Kanban

@@ -217,7 +217,7 @@ export class Project {
 
   public static async getReposNamesOfProject(
     projectId: string
-  ): Promise<Object[]> {
+  ): Promise<string[]> {
     let theProject;
     try {
       theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
