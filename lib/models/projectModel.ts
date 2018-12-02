@@ -208,14 +208,6 @@ export class Project {
   // Static function
   //------------------------------------------------------------------------------
 
-  public static async getFromMongo(projectId: string) {
-    const theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
-    const { id, name, owner_id, description } = theProject;
-    const kanbanIds = theProject.kanbanIds.slice(0);
-    const repositories = theProject.repositories.slice(0);
-    const project = new Project(id, name, owner_id, description);
-  }
-
   /**
    * Given a project ID, get all the names of repositories of that project.
    * @param projectId
@@ -255,5 +247,13 @@ export class Project {
       result.push(projectObj);
     }
     return result;
+  }
+
+  public static async getFromMongo(projectId: string) {
+    const theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
+    const { id, name, owner_id, description } = theProject;
+    const kanbanIds = theProject.kanbanIds.slice(0);
+    const repositories = theProject.repositories.slice(0);
+    const project = new Project(id, name, owner_id, description);
   }
 }
