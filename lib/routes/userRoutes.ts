@@ -15,7 +15,8 @@ export class UserRoutes {
       "/",
       Authorization.authenticate,
       async (req: Request, res: Response) => {
-        const owner = await Owner.getOwner(req);
+        const token = req.headers.authorization;
+        const owner = await Owner.getOwnerFromGithub(token);
         res.status(200).send(owner);
       }
     );

@@ -126,8 +126,8 @@ export class Project {
    * save the project object to the MongoDB
    * @param req - the http request which contains the access token in its header
    */
-  public async saveToMongo(req: Request): Promise<Object> {
-    const user: User = await User.getUser(req);
+  public async saveToMongo(token: string): Promise<Object> {
+    const user: User = await User.getUserFromGithb(token);
     this.ownerId = user.getId(); // get the owner ID from the access token
     const theId = this.id
       ? mongoose.Types.ObjectId(this.id)

@@ -173,6 +173,7 @@ export class Repository {
 
     let repositoryObjs: Repository[] = [];
     for (let theRepository of theRepositories) {
+      // TODO: optimize there!!!
       const issues: Issue[] = await Issue.getAllIssues(
         theRepository.owner.login,
         theRepository.name

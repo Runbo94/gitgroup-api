@@ -118,4 +118,39 @@ npm run start
 
 ### User
 
-- _GET /user_ - get the user information who holds this authorization token
+- _GET /user_
+  - Function: Get the user information who holds this authorization token
+  - Response:
+    ```JSON
+    {
+        "id": "user_github_node_id",
+        "name": "user_name",
+        "repositories": [
+            {
+                "repository_id": "repository_github_node_id",
+                "name": "repository_name",
+                "owner_id": "owner_name",
+                "description": "repository_description",
+                "_url": "https://github.com/owner_name/repository_name",
+                "issues": [
+                    {
+                        "issueId": "issue_github_node_id",
+                        "title": "issue_title",
+                        "body": "issue_body",
+                        "owner": "owner_name",
+                        "repos": "repository_name",
+                        "state": "open",
+                        "number": 1
+                    }
+                ]
+            }
+        ],
+        "projects": [
+            {
+                "id": "project_mongo_id",
+                "name": "project_name",
+                "ownerId": "owner_github_node_id"
+            }
+        ]
+    }
+    ```

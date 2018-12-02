@@ -37,16 +37,25 @@ export class Owner extends User {
   //   }
   // }
 
-  public static async getOwner(req: Request): Promise<Owner> {
-    const token = req.headers.authorization;
-    const githubRes = await github(token).get("/user");
-    const data = githubRes.data;
+  public static async getOwnerFromGithub(token: string): Promise<Owner> {
+    let theUser;
 
-    const projects = await Project.getProjectsOfUser(data.node_id);
+    try {
+      theUser = (await github(token).get("/user")).data;
+    } catch (error) {
+      console.error("<Error> Fail to get the user from the GitHub API.", error);
+    }
+
+    const projects = await Project.getProjectsOfUser(theUser.node_id);
 
     const repositories = await Repository.getRepositoriesFromGithub(token);
 
-    const owner = new Owner(data.node_id, data.login, projects, repositories);
+    const owner = new Owner(
+      theUser.node_id,
+      theUser.login,
+      projects,
+      repositories
+    );
     return owner;
   }
 }

@@ -17,6 +17,7 @@ export class ProjectRoutes {
       "/new",
       Authorization.authenticate,
       async (req: Request, res: Response) => {
+        const token = req.headers.authorization;
         const { name, description, repositories } = req.body;
         const project = new Project(
           undefined, // the id of the project, the mongodb will assign it one ID
@@ -27,7 +28,7 @@ export class ProjectRoutes {
           [], // the kanban IDs the project has
           [] // the collaborators of the project
         );
-        const theProject = await project.saveToMongo(req);
+        const theProject = await project.saveToMongo(token);
         res.status(200).send(theProject);
       }
     );
