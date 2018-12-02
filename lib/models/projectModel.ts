@@ -1,3 +1,6 @@
+//----------------------------------------------------------------------------
+// Project(Mongo)
+//----------------------------------------------------------------------------
 import * as mongoose from "mongoose";
 import { RepositoryMongo } from "./repositoryModel";
 
@@ -28,38 +31,44 @@ export class ProjectMongo {
 }
 
 //--------------------------------------------------------------------------
-// Class Project
+// Project(Class)
 //--------------------------------------------------------------------------
 
 import { Request } from "express";
 import { Repository } from "./repositoryModel";
 import { Collaborator } from "./collaboratorModel";
-import { github } from "../remoteConnection/github/githubAPI";
 import { User, UserMongo } from "./userModel";
 
 export class Project {
-  private id: string;
-  private name: string;
-  private owner_id: string;
-  private description: string;
-  private repositories: Repository[];
-  private collaborators: Collaborator[];
+  private id: string; // the id project id stored in the mongo db
+  private name: string; // the name of the project
+  private ownerId: string; // the owner ID of the project
+  private description: string; // the description of the project
+  private repositories: Repository[]; // all the repositories the project has
+  private kanbanIds: string[]; // all the kanban ID the project has
+  private collaborators: Collaborator[]; // all the collaborator of the project
 
   constructor(
     id?: string,
     name?: string,
-    owner_id?: string,
+    ownerId?: string,
     description?: string,
     repositories?: Repository[],
+    kanbanIds?: string[],
     collaborators?: Collaborator[]
   ) {
     if (id) this.id = id;
     if (name) this.name = name;
-    if (owner_id) this.owner_id = owner_id;
+    if (ownerId) this.ownerId = ownerId;
     if (description) this.description = description;
     if (repositories) this.repositories = repositories.slice(0);
+    if (kanbanIds) this.kanbanIds = kanbanIds.slice(0);
     if (collaborators) this.collaborators = collaborators.slice(0);
   }
+
+  //----------------------------------------------------------------
+  // getter and setter function
+  //----------------------------------------------------------------
 
   public getId(): string {
     return this.id;
@@ -67,6 +76,14 @@ export class Project {
 
   public getName(): string {
     return this.name;
+  }
+
+  public setName(name: string): void {
+    this.name = name;
+  }
+
+  public getOwnerId(): string {
+    return this.ownerId;
   }
 
   public getDescription(): string {
@@ -78,14 +95,128 @@ export class Project {
   }
 
   public getRepositories(): Repository[] {
-    return this.repositories;
+    return this.repositories.slice(0);
+  }
+
+  public setRepositories(repositories: Repository[]): void {
+    this.repositories = repositories.slice(0);
+  }
+
+  public getKanbanIds(): string[] {
+    return this.kanbanIds.slice(0);
+  }
+
+  public setKanbanIds(kanbanIds: string[]): void {
+    this.kanbanIds = kanbanIds.slice(0);
   }
 
   public getCollaborators(): Collaborator[] {
-    return this.collaborators;
+    return this.collaborators.slice(0);
   }
 
-  /*************************************************************************
+  public setCollaborators(collaborator: Collaborator[]) {
+    this.collaborators = collaborator.slice(0);
+  }
+
+  //------------------------------------------------------------------------
+  // All Functions
+  //------------------------------------------------------------------------
+
+  /**
+   * save the project object to the MongoDB
+   * @param req - the http request which contains the access token in its header
+   */
+  public async saveToMongo(req: Request): Promise<Object> {
+    const user: User = await User.getUser(req);
+    this.ownerId = user.getId(); // get the owner ID from the access token
+    const theId = this.id
+      ? mongoose.Types.ObjectId(this.id)
+      : mongoose.Types.ObjectId(); // set the id if the this.id is undefined
+
+    let project: Object = {
+      // saved data format
+      _id: theId,
+      name: this.name,
+      owner_id: this.ownerId,
+      description: this.description,
+      repositories: this.repositories
+    };
+
+    /** save it to the project document */
+    try {
+      // throw new Error("DEBUG");
+      const projectMongo = new ProjectMongo.ProjectMongoModel(project);
+      await projectMongo.save();
+      this.id = theId;
+    } catch (error) {
+      console.error("<Error> Fail to save the project to mongoDB.", error);
+    }
+
+    /** saved it as a sub-document under the user document */
+    // get user from mongo db
+    let theUser;
+    try {
+      theUser = await UserMongo.UserMongoModel.findOne({
+        node_id: this.ownerId
+      });
+    } catch (error) {
+      console.error(
+        "<Error> Fail to get the user from the mongoDB whose the node_id is " +
+          this.ownerId,
+        error
+      );
+    }
+
+    // the the user not exist in the mongodb create a new user in the mongoDB
+    try {
+      if (!theUser) {
+        const userMongo = new UserMongo.UserMongoModel({
+          node_id: this.ownerId,
+          name: user.getName()
+        });
+        theUser = await userMongo.save();
+      }
+    } catch (error) {
+      console.error(
+        "<Error> Fail to create a new user in the mongoDB whose GitHub node_id is " +
+          this.ownerId,
+        error
+      );
+    }
+
+    // add the project to user
+    if (!theUser.projects) {
+      theUser.projects = [project]; // if there is no projects key in the user, create an empty array
+    } else {
+      theUser.projects.push(project);
+    }
+
+    let result;
+    try {
+      result = await theUser.save();
+    } catch (error) {
+      console.error(
+        "<Error> Fail to save the user in the document when push a new project in the user.",
+        error
+      );
+    }
+
+    return result;
+  }
+
+  //------------------------------------------------------------------------------
+  // Static function
+  //------------------------------------------------------------------------------
+
+  public static async getFromMongo(projectId: string) {
+    const theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
+    const { id, name, owner_id, description } = theProject;
+    const kanbanIds = theProject.kanbanIds.slice(0);
+    const repositories = theProject.repositories.slice(0);
+    const project = new Project(id, name, owner_id, description);
+  }
+
+  /**
    * Given a project ID, get all the names of repositories of that project.
    * @param projectId
    * @returns {string[]} - the list of the names of the repositories
@@ -103,7 +234,7 @@ export class Project {
     return result;
   }
 
-  /************************************************************************
+  /*
    * Get the projects of the user
    * @param token the access token
    * @param userId the node_id of the user
@@ -123,46 +254,6 @@ export class Project {
       );
       result.push(projectObj);
     }
-    return result;
-  }
-
-  public async saveToMongo(req: Request) {
-    const user: User = await User.getUser(req);
-    this.owner_id = user.getId();
-    let project: Object = {
-      name: this.name,
-      owner_id: this.owner_id,
-      description: this.description,
-      repositories: this.repositories
-    };
-
-    const projectMongo = new ProjectMongo.ProjectMongoModel(project);
-    const savedProject = await projectMongo.save();
-    project["_id"] = savedProject._id;
-    this.id = savedProject._id;
-
-    // get user from mongo db
-    let userMongoData = await UserMongo.UserMongoModel.findOne({
-      node_id: this.owner_id
-    });
-
-    if (!userMongoData) {
-      const userMongo = new UserMongo.UserMongoModel({
-        node_id: this.owner_id,
-        name: user.getName()
-      });
-      userMongoData = await userMongo.save();
-    }
-
-    if (!userMongoData.projects) {
-      userMongoData.projects = [project];
-    } else {
-      userMongoData.projects.push(project);
-    }
-
-    const newUserMongo = new UserMongo.UserMongoModel(userMongoData);
-    const result = await newUserMongo.save();
-
     return result;
   }
 }

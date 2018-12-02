@@ -34,6 +34,18 @@ export class IssueRoutes {
         res.status(200).send(result);
       }
     );
+
+    /** close the issue */
+    this.router.get(
+      "/close/:userName/:reposName/:issueId",
+      async (req: Request, res: Response) => {
+        const { userName, reposName, issueId } = req.params;
+        const token = req.headers.authorization;
+        const theIssue = await Issue.getIssue(userName, reposName, issueId);
+        const result = await theIssue.close(token);
+        res.status(200).send(result);
+      }
+    );
   }
 
   public routes(app: Application): void {

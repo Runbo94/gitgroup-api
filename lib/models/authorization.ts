@@ -10,15 +10,21 @@ export class Authorization {
   private client_id: string;
   private client_secret: string;
   private githubAuthUrl: string;
+  private scope: string;
 
   constructor() {
     this.client_id = config.get("github.client_id");
     this.client_secret = config.get("github.client_secret");
+    this.scope = config.get("github.scope");
     this.githubAuthUrl = githubAuthUrl;
   }
 
   public getClientId(): string {
     return this.client_id;
+  }
+
+  public getScope(): string {
+    return this.scope;
   }
 
   public getGithubAuthUrl(): string {

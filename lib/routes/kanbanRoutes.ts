@@ -1,9 +1,6 @@
 import { Application, Request, Response, Router } from "express";
-import { Authorization } from "./../models/authorization";
 import { Kanban } from "../models/kanbanModel";
 import { KanbanColumn } from "../models/kanbanColumnModel";
-import { Card } from "../models/cardModel";
-
 export class KanbanRoutes {
   private router: Router;
 
@@ -24,6 +21,8 @@ export class KanbanRoutes {
      */
     this.router.post("/new", async (req: Request, res: Response) => {
       let { name, due, projectId, columns } = req.body;
+
+      // create column
       if (!columns) {
         const toDoCol = new KanbanColumn(undefined, "To Do");
         const inCol = new KanbanColumn(undefined, "In Progress");
@@ -31,6 +30,7 @@ export class KanbanRoutes {
         const doneCol = new KanbanColumn(undefined, "Done");
         columns = [toDoCol, inCol, reviewCol, doneCol];
       }
+      // create new Kanban object
       const theKanban = new Kanban(
         undefined,
         name,
@@ -38,6 +38,8 @@ export class KanbanRoutes {
         due,
         projectId,
         columns,
+        [],
+        [],
         []
       );
       const savedKanban = await theKanban.saveToMongo();
@@ -52,11 +54,22 @@ export class KanbanRoutes {
       res.status(200).send(kanbans);
     });
 
+    /** according to the kanban id, get the kanban */
     this.router.get(
       "/kanban_id/:kanbanId",
       async (req: Request, res: Response) => {
         const theKanban = await Kanban.getKanbanById(req.params.kanbanId);
         res.status(200).send(theKanban);
+      }
+    );
+
+    /** get a kanban column */
+    this.router.get(
+      "/column/:kanbanId/:columnId",
+      async (req: Request, res: Response) => {
+        const { kanbanId, columnId } = req.params;
+        const theColumn = await KanbanColumn.getColumn(kanbanId, columnId);
+        res.status(200).send(theColumn);
       }
     );
   }

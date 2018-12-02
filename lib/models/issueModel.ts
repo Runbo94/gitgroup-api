@@ -1,4 +1,4 @@
-import { githubApiPreview } from "../remoteConnection/github/githubAPI";
+import { githubApiPreview, github } from "../remoteConnection/github/githubAPI";
 
 export class Issue {
   private issueId: string;
@@ -7,6 +7,7 @@ export class Issue {
   private title: string;
   private body: string;
   private state: string;
+  private number: number; // used for access github api
 
   /**
    * The Issue Constructor
@@ -21,7 +22,8 @@ export class Issue {
     body?: string,
     owner?: string,
     repos?: string,
-    state?: string
+    state?: string,
+    number?: number
   ) {
     this.issueId = id;
     this.title = title;
@@ -31,6 +33,7 @@ export class Issue {
     if (state && state !== "close" && state !== "open")
       throw new RangeError("State must be 'close' or 'open'.");
     this.state = state;
+    this.number = number;
   }
 
   /**
@@ -45,6 +48,10 @@ export class Issue {
    */
   public getTitle(): string {
     return this.title;
+  }
+
+  public getNumber(): number {
+    return this.number;
   }
 
   /**
@@ -79,16 +86,29 @@ export class Issue {
 
   /**
    * Close the issue
+   *  *must have owner, repos, number fields
    */
-  public close(): void {
+  public async close(token): Promise<any> {
     this.state = "close";
+    return (await github(token).patch(
+      `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
+      {
+        state: "closed"
+      }
+    )).data;
   }
 
   /**
    * Open the issue
    */
-  public open(): void {
+  public async open(token): Promise<any> {
     this.state = "open";
+    return (await github(token).patch(
+      `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
+      {
+        state: "open"
+      }
+    )).data;
   }
 
   public getOwner(): string {
@@ -99,37 +119,7 @@ export class Issue {
     return this.repos;
   }
 
-  /************************************************************************
-   * Get all issues for specific user and his repository
-   * @param username
-   * @param reposName
-   */
-  public static async getAllIssues(
-    username: string,
-    reposName: string
-  ): Promise<any[]> {
-    const issuesData: any = await githubApiPreview.get(
-      `/repos/${username}/${reposName}/issues`
-    );
-    if (!issuesData.data) return issuesData;
-    let issues: Issue[] = [];
-    for (let data of issuesData.data) {
-      const reposUrl: string = data.repository_url;
-      const repos: string = reposUrl.split("/").pop();
-      const issueObj = new Issue(
-        data.node_id,
-        data.title,
-        data.body,
-        data.user.login,
-        repos,
-        data.state
-      );
-      issues.push(issueObj);
-    }
-    return issues;
-  }
-
-  /************************************************************************
+  /*
    * save the issue to the GitHub.
    */
   public async save(): Promise<any> {
@@ -148,5 +138,71 @@ export class Issue {
       throw error;
     }
     return result;
+  }
+
+  //-------------------------------------------------------------------------
+  // Static methods
+  //-------------------------------------------------------------------------
+
+  /*
+   * Get all issues for specific user and his repository
+   * @param username
+   * @param reposName
+   */
+  public static async getAllIssues(
+    username: string,
+    reposName: string
+  ): Promise<any[]> {
+    const theIssues: any = (await githubApiPreview.get(
+      `/repos/${username}/${reposName}/issues`
+    )).data;
+    if (!theIssues) return theIssues;
+    let issues: Issue[] = [];
+    for (let data of theIssues) {
+      const reposUrl: string = data.repository_url;
+      const repos: string = reposUrl.split("/").pop();
+      const issueObj = new Issue(
+        data.node_id,
+        data.title,
+        data.body,
+        data.user.login,
+        repos,
+        data.state,
+        data.number
+      );
+      issues.push(issueObj);
+    }
+    return issues;
+  }
+
+  /**
+   * get the Issue Object from github api
+   * @param username the name of user
+   * @param reposName the name of repos
+   * @param issueId the id of issue
+   */
+  public static async getIssue(
+    username: string,
+    reposName: string,
+    issueId: string
+  ): Promise<any> {
+    const theIssues: any = (await githubApiPreview.get(
+      `/repos/${username}/${reposName}/issues`
+    )).data;
+    if (!theIssues) return theIssues;
+
+    let theIssue = theIssues.find(issue => issue.node_id === issueId);
+    const reposUrl: string = theIssue.repository_url;
+    const repos: string = reposUrl.split("/").pop();
+    const issueObj = new Issue(
+      theIssue.node_id,
+      theIssue.title,
+      theIssue.body,
+      theIssue.user.login,
+      repos,
+      theIssue.state,
+      theIssue.number
+    );
+    return issueObj;
   }
 }

@@ -116,4 +116,9 @@ export class KanbanColumn {
     }
     return result;
   }
+
+  public static async getColumn(kanbanId: string, columnId: string) {
+    const theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
+    return theKanban.columns.id(columnId);
+  }
 }

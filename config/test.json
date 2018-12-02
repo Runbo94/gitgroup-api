@@ -3,7 +3,6 @@
     "url": "ds137283.mlab.com:37283/gitgroup"
   },
   "github": {
-    "apiUrl": "https://api.github.com",
-    "client_id": "Iv1.6086bc7359ba9d0b"
+    "apiUrl": "https://api.github.com"
   }
 }

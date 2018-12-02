@@ -27,6 +27,10 @@ export class CardMongo {
     columnId: {
       type: String,
       required: true
+    },
+    number: {
+      type: Number,
+      required: true
     }
   });
 
@@ -34,7 +38,7 @@ export class CardMongo {
 }
 import { Issue } from "./issueModel";
 import { githubApiPreview } from "../remoteConnection/github/githubAPI";
-import { KanbanMongo } from "./kanbanModel";
+import { KanbanMongo, Kanban } from "./kanbanModel";
 import { ProjectMongo } from "./projectModel";
 import { KanbanColumn } from "./kanbanColumnModel";
 
@@ -57,7 +61,8 @@ export class Card extends Issue {
       issue.getBody(),
       issue.getOwner(),
       issue.getRepos(),
-      issue.getState()
+      issue.getState(),
+      issue.getNumber()
     );
     this.note = note;
     if (kanbanId) this.kanbanId = kanbanId;
@@ -94,6 +99,7 @@ export class Card extends Issue {
       issue_id: this.getIssueId(),
       title: this.getTitle(),
       body: this.getBody(),
+      number: this.getNumber(),
       owner: this.getOwner(),
       repos: this.getRepos(),
       state: this.getState(),
@@ -103,13 +109,18 @@ export class Card extends Issue {
     };
   }
 
-  public async saveToMongo() {
+  /**
+   * save the card
+   * @param token used to save issue when the card save to done column
+   */
+  public async saveToMongo(token?: string) {
     const theId = this.id
       ? mongoose.Types.ObjectId(this.id)
       : mongoose.Types.ObjectId();
     const theCard = {
       _id: theId,
       issue_id: this.getIssueId(),
+      number: this.getNumber(),
       title: this.getTitle(),
       body: this.getBody(),
       owner: this.getOwner(),
@@ -119,132 +130,153 @@ export class Card extends Issue {
       kanbanId: this.kanbanId,
       columnId: this.columnId
     };
-    // return await KanbanMongo.KanbanMongoModel.findById(
-    //   this.kanbanId,
-    //   (error, doc) => {
-    //     doc.columns.id(this.columnId).cards.push(theCard);
-    //     doc.save();
-    //   }
-    // );
+
     let theKanban = await KanbanMongo.KanbanMongoModel.findById(this.kanbanId);
-    if (!theKanban.includeIssueIds) theKanban.includeIssueIds = [];
-    if (!theKanban.includeIssueIds.includes(theCard.issue_id))
-      theKanban.includeIssueIds.push(theCard.issue_id);
-    theKanban.columns.id(this.columnId).cards.push(theCard);
+
+    // get the column
+    const theColumn = await KanbanColumn.getColumn(
+      this.kanbanId,
+      this.columnId
+    );
+    // if add the new card to the 'Done' column
+    if (theColumn.name === "Done") {
+      // TODO: close the issue
+      const theIssue = await Issue.getIssue(
+        this.getOwner(),
+        this.getRepos(),
+        this.getIssueId()
+      );
+      try {
+        const closeReturn = await theIssue.close(token);
+      } catch (error) {
+        console.log(error);
+      }
+      // TODO: delete it(issueId) from includeIssueIds in the Kanban
+      if (theKanban.includeIssueIds.includes(this.getIssueId()))
+        theKanban.includeIssueIds = theKanban.includeIssueIds.filter(
+          id => id !== this.getIssueId()
+        );
+      // TODO: add it(issueId) to finishedIssueIds in the Kanban
+      if (!theKanban.finishedIssueIds) theKanban.finishedIssueIds = [];
+      if (!theKanban.finishedIssueIds.includes(theCard.issue_id))
+        theKanban.finishedIssueIds.push(theCard.issue_id);
+    } else {
+      if (!theKanban.includeIssueIds) theKanban.includeIssueIds = [];
+      if (!theKanban.includeIssueIds.includes(theCard.issue_id))
+        theKanban.includeIssueIds.push(theCard.issue_id);
+    }
+
+    if (
+      !theKanban.columns
+        .id(this.columnId)
+        .cards.find(card => card._id === theCard._id)
+    ) {
+      theKanban.columns.id(this.columnId).cards.push(theCard);
+    }
     await theKanban.save();
     return theCard;
   }
 
-  /***********************************************************************************
-   * save the card
-   * @returns the result of the save
-   */
-  public async save(): Promise<any> {
-    const post: any = {
-      note: this.note,
-      content_id: this.getIssueId(),
-      content_type: "Issue" // future change: there may be another choice - PullRequest
-    };
-    const result = await githubApiPreview.post(
-      `/projects/columns/cards/${this.columnId}`,
-      post
-    );
-    return result;
-  }
+  // /***********************************************************************************
+  //  * save the card
+  //  * @returns the result of the save
+  //  */
+  // public async save(): Promise<any> {
+  //   const post: any = {
+  //     note: this.note,
+  //     content_id: this.getIssueId(),
+  //     content_type: "Issue" // future change: there may be another choice - PullRequest
+  //   };
+  //   const result = await githubApiPreview.post(
+  //     `/projects/columns/cards/${this.columnId}`,
+  //     post
+  //   );
+  //   return result;
+  // }
 
   public static async deleteACard(
     kanbanId: string,
     columnId: string,
-    cardId: string
+    cardId: string,
+    token: string
   ) {
-    // return await KanbanMongo.KanbanMongoModel.findById(
-    //   kanbanId,
-    //   (error, doc) => {
-    //     doc.columns
-    //       .id(columnId)
-    //       .cards.id(cardId)
-    //       .remove();
-    //     doc.save();
-    //   }
-    // );
     let theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
     const deletedCard = theKanban.columns.id(columnId).cards.id(cardId);
-    if (theKanban.includeIssueIds.includes(deletedCard.issue_id))
+    deletedCard.remove();
+
+    // get the column
+    const column = await KanbanColumn.getColumn(kanbanId, columnId);
+    // if remove the card from "Done" column
+    const theCard = await Card.getCardById(kanbanId, columnId, cardId);
+    if (column.name === "Done") {
+      // open the issue
+      await theCard.open(token);
+      // TODO: remove it(issueId) from finishedIssueIds in the Kanban
+      if (theKanban.finishedIssueIds.includes(theCard.getIssueId()))
+        theKanban.finishedIssueIds = theKanban.finishedIssueIds.filter(
+          id => id !== theCard.getIssueId()
+        );
+    }
+    if (theKanban.includeIssueIds.includes(theCard.getIssueId()))
       theKanban.includeIssueIds = theKanban.includeIssueIds.filter(
         id => id !== deletedCard.issue_id
       );
-    deletedCard.remove();
+
     theKanban.save();
     return deletedCard;
   }
 
-  public static async getAllIssueCardsAndSaveToBackLog(kanbanId: string) {
-    // according to the kanban id, get the project id
+  public static async getCardById(
+    kanbanId: string,
+    columnId: string,
+    cardId: string
+  ): Promise<Card> {
     const theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
-    const projectId = theKanban.projectId;
-
-    // according to the project id, get the repositories[{_id, repository_id, name, owner_id, description, _url}]
-    const theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
-    const allRepositories = theProject.repositories;
-
-    // get all the issues
-    let issues: Issue[] = [];
-    for (const repository of allRepositories) {
-      const issuesOfRepos = await Issue.getAllIssues(
-        repository.owner_id,
-        repository.name
-      );
-      issues.push(...issuesOfRepos);
-    }
-
-    // transfer issues to cards
-    let cards: Card[] = [];
-    for (const issue of issues) {
-      const card = new Card(issue, "", kanbanId, "");
-      cards.push(card);
-    }
-
-    // create a new back log column to the kanban
-    const theKanbanColumn = new KanbanColumn(kanbanId, "BackLog", cards);
-    const result = await theKanbanColumn.saveToMongo();
-    return result;
+    const theCard = theKanban.columns.id(columnId).cards.id(cardId);
+    const {
+      issue_id,
+      title,
+      body,
+      owner,
+      repos,
+      state,
+      note,
+      number
+    } = theCard;
+    const issue = new Issue(issue_id, title, body, owner, repos, state, number);
+    const card = new Card(issue, note, kanbanId, columnId, cardId);
+    return card;
   }
 
-  // public async saveToMongo(userId: string) {
-  //   let project: Object = {
-  //     name: this.name,
-  //     owner_id: this.owner_id,
-  //     description: this.description,
-  //     repositories: this.repositories
-  //   };
+  // public static async getAllIssueCardsAndSaveToBackLog(kanbanId: string) {
+  //   // according to the kanban id, get the project id
+  //   const theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
+  //   const projectId = theKanban.projectId;
 
-  //   const projectMongo = new Project.ProjectMongoModel(project);
-  //   const savedProject = await projectMongo.save();
-  //   project["_id"] = savedProject._id;
-  //   this.id = savedProject._id;
+  //   // according to the project id, get the repositories[{_id, repository_id, name, owner_id, description, _url}]
+  //   const theProject = await ProjectMongo.ProjectMongoModel.findById(projectId);
+  //   const allRepositories = theProject.repositories;
 
-  //   // get user from mongo db
-  //   let userMongoData = await User.UserMongoModel.findOne({
-  //     node_id: this.owner_id
-  //   });
-
-  //   if (!userMongoData) {
-  //     const userMongo = new User.UserMongoModel({
-  //       node_id: this.owner_id,
-  //       name: user.getName()
-  //     });
-  //     userMongoData = await userMongo.save();
+  //   // get all the issues
+  //   let issues: Issue[] = [];
+  //   for (const repository of allRepositories) {
+  //     const issuesOfRepos = await Issue.getAllIssues(
+  //       repository.owner_id,
+  //       repository.name
+  //     );
+  //     issues.push(...issuesOfRepos);
   //   }
 
-  //   if (!userMongoData.projects) {
-  //     userMongoData.projects = [project];
-  //   } else {
-  //     userMongoData.projects.push(project);
+  //   // transfer issues to cards
+  //   let cards: Card[] = [];
+  //   for (const issue of issues) {
+  //     const card = new Card(issue, "", kanbanId, "");
+  //     cards.push(card);
   //   }
 
-  //   const newUserMongo = new User.UserMongoModel(userMongoData);
-  //   const result = await newUserMongo.save();
-
+  //   // create a new back log column to the kanban
+  //   const theKanbanColumn = new KanbanColumn(kanbanId, "BackLog", cards);
+  //   const result = await theKanbanColumn.saveToMongo();
   //   return result;
   // }
 }

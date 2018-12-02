@@ -41,7 +41,8 @@ export class KanbanMongo {
       type: [CardMongo.CardMongoModel.schema],
       default: []
     },
-    includeIssueIds: [String]
+    includeIssueIds: [String],
+    finishedIssueIds: [String]
   });
 
   public static KanbanMongoModel = mongoose.model(
@@ -66,7 +67,9 @@ export class Kanban {
   private projectId: string;
   private columns: KanbanColumn[];
   private includeIssueIds: string[];
+  private finishedIssueIds: string[];
   private cards: Card[];
+  private ownerName: string;
 
   constructor(
     id?: string,
@@ -76,7 +79,9 @@ export class Kanban {
     projectId?: string,
     columns?: KanbanColumn[],
     includeIssueIds?: string[],
-    cards?: Card[]
+    finishedIssueIds?: string[],
+    cards?: Card[],
+    ownerName?: string
   ) {
     if (id) this.id = id;
     if (name) this.name = name;
@@ -86,6 +91,8 @@ export class Kanban {
     if (due) this.due = due;
     if (projectId) this.projectId = projectId;
     if (includeIssueIds) this.includeIssueIds = includeIssueIds.slice(0);
+    if (finishedIssueIds) this.finishedIssueIds = finishedIssueIds.slice(0);
+    if (ownerName) this.ownerName = ownerName;
 
     this.columns = [];
     if (columns) {
@@ -186,7 +193,8 @@ export class Kanban {
       state: this.state,
       due: this.due,
       projectId: this.projectId,
-      includeIssueIds: this.includeIssueIds
+      includeIssueIds: this.includeIssueIds,
+      finishedIssueIds: this.finishedIssueIds
       // need fixed later...
       // columns: [...this.columns],
       // cards: [...this.cards]
@@ -196,7 +204,7 @@ export class Kanban {
 
     for (let col of this.columns) {
       col.setKanbanId(theKanban["id"]);
-      col.saveToMongo();
+      await col.saveToMongo();
     }
 
     // change the 'project' document, add the kanban id to the project

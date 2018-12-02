@@ -45,6 +45,7 @@ export class CardRoutes {
     this.router.post(
       "/add_new_card/:kanban_id/:column_id",
       async (req: Request, res: Response) => {
+        const token = req.headers.authorization;
         const {
           id,
           issueId,
@@ -53,13 +54,22 @@ export class CardRoutes {
           owner,
           repos,
           state,
-          note
+          note,
+          number
         } = req.body;
         const kanbanId = req.params.kanban_id;
         const columnId = req.params.column_id;
-        let theIssue = new Issue(issueId, title, body, owner, repos, state);
+        let theIssue = new Issue(
+          issueId,
+          title,
+          body,
+          owner,
+          repos,
+          state,
+          number
+        );
         let theCard = new Card(theIssue, note, kanbanId, columnId, id);
-        const result = await theCard.saveToMongo();
+        const result = await theCard.saveToMongo(token);
         res.status(200).send(result);
       }
     );
@@ -67,8 +77,14 @@ export class CardRoutes {
     this.router.delete(
       "/:kanban_id/:column_id/:card_id",
       async (req: Request, res: Response) => {
+        const token = req.headers.authorization;
         const { kanban_id, column_id, card_id } = req.params;
-        const result = await Card.deleteACard(kanban_id, column_id, card_id);
+        const result = await Card.deleteACard(
+          kanban_id,
+          column_id,
+          card_id,
+          token
+        );
         res.status(200).send(result);
       }
     );
