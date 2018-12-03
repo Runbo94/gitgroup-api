@@ -1,6 +1,5 @@
 {
   "github": {
-    "token": "github_token",
     "client_secret": "github_client_secret",
     "client_id": "github_client_id"
   },
