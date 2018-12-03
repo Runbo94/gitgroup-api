@@ -48,7 +48,7 @@ npm run start
 
 ### Project
 
-- _POST /project/new_
+- _POST http://localhost:8000/project/new_
 
   - Function: Create a new project.
   - body: {*name, *description, \*repositories}
@@ -81,7 +81,7 @@ npm run start
     }
     ```
 
-- _/project/name/:projectId_
+- _http://localhost:8000/project/name/:projectId_
   - Function: Get the project name with given the project ID.
   - Response:
     ```
@@ -90,7 +90,7 @@ npm run start
 
 ### Repository
 
-- _GET /repos_
+- _GET http://localhost:8000/repos_
   - Function: Get all the repositories of the user
   - Response:
     ```JOSN
@@ -118,7 +118,7 @@ npm run start
 
 ### User
 
-- _GET /user_
+- _GET http://localhost:8000/user_
   - Function: Get the user information who holds this authorization token
   - Response:
     ```JSON
@@ -173,7 +173,7 @@ npm run start
         }
     ]
     ```
-- _GET http://localhost:8000/issues/project\_issues/:username/:projectId_
+- _GET http://localhost:8000/issues/project-issues/:username/:projectId_
   - Function: Get all the issues for the given project ID.
   - Response:
     ```JSON
@@ -189,7 +189,7 @@ npm run start
         }
     ]
     ```
-- _GET /close/:userName/:reposName/:issueId_
+- _GET http://localhost:8000/close/:userName/:reposName/:issueId_
   - Function: Close the issue.
 
 ### Card

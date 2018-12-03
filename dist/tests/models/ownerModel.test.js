@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ownerModel_1 = require("./../../models/ownerModel");
 describe("test owner class constructor", () => {
     it("should create a new basic class with id and name", () => {
-        const owner = new ownerModel_1.Owner("test name", "1");
+        const owner = new ownerModel_1.Owner("1", "test name");
         expect(owner).toMatchObject({
-            name: "test name",
-            id: "1"
+            id: "1",
+            name: "test name"
         });
     });
 });

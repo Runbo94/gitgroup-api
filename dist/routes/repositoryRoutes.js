@@ -18,7 +18,8 @@ class RepositoryRoutes {
          * GET /repos - get all repository
          */
         this.router.get("/", authorization_1.Authorization.authenticate, (req, res) => __awaiter(this, void 0, void 0, function* () {
-            const reposes = yield repositoryModel_1.Repository.getAll(req);
+            const token = req.headers.authorization;
+            const reposes = yield repositoryModel_1.Repository.getRepositoriesFromGithub(token);
             res.status(200).send(reposes);
         }));
     }

@@ -14,10 +14,14 @@ class Authorization {
     constructor() {
         this.client_id = config.get("github.client_id");
         this.client_secret = config.get("github.client_secret");
+        this.scope = config.get("github.scope");
         this.githubAuthUrl = githubAPI_1.githubAuthUrl;
     }
     getClientId() {
         return this.client_id;
+    }
+    getScope() {
+        return this.scope;
     }
     getGithubAuthUrl() {
         return this.githubAuthUrl;

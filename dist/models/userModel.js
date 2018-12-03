@@ -8,6 +8,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+//-------------------------------------------------------------------------
+// Mongoose Related Data
+//-------------------------------------------------------------------------
+const mongoose = require("mongoose");
+const repositoryModel_1 = require("./repositoryModel");
+const projectModel_1 = require("./projectModel");
+class UserMongo {
+}
+UserMongo.userSchema = new mongoose.Schema({
+    node_id: {
+        type: String,
+        required: true
+    },
+    name: {
+        type: String,
+        required: true
+    },
+    projects: [projectModel_1.ProjectMongo.ProjectMongoModel.schema],
+    repository: [repositoryModel_1.RepositoryMongo.RepositoryMongoModel.schema]
+});
+UserMongo.UserMongoModel = mongoose.model("users", UserMongo.userSchema);
+exports.UserMongo = UserMongo;
 const githubAPI_1 = require("../remoteConnection/github/githubAPI");
 /**
  * User Class
@@ -22,30 +44,34 @@ class User {
         if (repositories)
             this.repositories = repositories.slice(0);
     }
-    /**
-     * @returns the id of the user
-     */
+    //------------------------------------------------------------
+    // Getter and Setter Functions
+    //------------------------------------------------------------
     getId() {
         return this.id;
     }
-    /**
-     * @returns the name of the user
-     */
     getName() {
         return this.name;
     }
-    /**
-     * @returns all the repositories of the user
-     */
     getRepositories() {
         return this.repositories;
     }
-    static getUser(req) {
+    //------------------------------------------------------------------
+    // Some Functions
+    //------------------------------------------------------------------
+    //------------------------------------------------------------------
+    // Some Static Functions
+    //------------------------------------------------------------------
+    static getUserFromGithb(token) {
         return __awaiter(this, void 0, void 0, function* () {
-            const token = req.headers.authorization;
-            const githubRes = yield githubAPI_1.github(token).get("/user");
-            const data = githubRes.data;
-            const user = new User(data.node_id, data.login);
+            let theUser;
+            try {
+                theUser = (yield githubAPI_1.github(token).get("/user")).data;
+            }
+            catch (error) {
+                console.error("<Error> Fail to get the user from GitHub.", error);
+            }
+            const user = new User(theUser.node_id, theUser.login);
             return user;
         });
     }

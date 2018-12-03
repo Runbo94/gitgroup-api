@@ -1,3 +1,6 @@
+//-----------------------------------------------------------------
+// Mongoose Related Data
+//-----------------------------------------------------------------
 import * as mongoose from "mongoose";
 export class CardMongo {
   public static CardSchema = new mongoose.Schema({
@@ -36,11 +39,12 @@ export class CardMongo {
 
   public static CardMongoModel = mongoose.model("cards", CardMongo.CardSchema);
 }
+
+//-----------------------------------------------------------------------------------
+// Card(class)
+//-----------------------------------------------------------------------------------
 import { Issue } from "./issueModel";
-import { githubApiPreview } from "../remoteConnection/github/githubAPI";
-import { KanbanMongo, Kanban } from "./kanbanModel";
-import { ProjectMongo } from "./projectModel";
-import { KanbanColumn } from "./kanbanColumnModel";
+import { KanbanMongo } from "./kanbanModel";
 
 export class Card extends Issue {
   private note: string;
@@ -48,6 +52,14 @@ export class Card extends Issue {
   private columnId: string;
   private id: string;
 
+  /**
+   * Constructor function
+   * @param issue the issue which the card represents
+   * @param note the note of the card
+   * @param kanbanId the kanban ID which the card belongs to
+   * @param columnId the column ID which the card belongs to
+   * @param id the mongo id of the card
+   */
   constructor(
     issue: Issue,
     note: string,
@@ -71,30 +83,34 @@ export class Card extends Issue {
     if (id) this.id = id;
   }
 
-  /**
-   * get the note
-   * @returns the note of the card
-   */
+  //--------------------------------------------------------------------------
+  // Getter and Setter Functions
+  //--------------------------------------------------------------------------
   public getNote(): string {
     return this.note;
   }
 
-  /**
-   * change the note of the card
-   * @param note set the note of the card
-   */
   public setNote(note: string): void {
     this.note = note;
   }
 
-  /**
-   * @returns get the column id the card belongs to
-   */
-  public getColId(): string {
+  public getColumnId(): string {
     return this.columnId;
   }
 
-  public toCardOject(): any {
+  public setColumnId(columnId: string): void {
+    this.columnId = columnId;
+  }
+
+  public getId(): string {
+    return this.id;
+  }
+
+  //---------------------------------------------------------------------------
+  // Some Functions
+  //---------------------------------------------------------------------------
+
+  public toCardObject(): any {
     return {
       issue_id: this.getIssueId(),
       title: this.getTitle(),
@@ -109,14 +125,20 @@ export class Card extends Issue {
     };
   }
 
+  public async logFinish() {}
+
+  public async logCreate() {}
+
   /**
    * save the card
    * @param token used to save issue when the card save to done column
    */
   public async saveToMongo(token?: string) {
+    // create a new mongo ID
     const theId = this.id
       ? mongoose.Types.ObjectId(this.id)
       : mongoose.Types.ObjectId();
+    // the object saved to mongoDB
     const theCard = {
       _id: theId,
       issue_id: this.getIssueId(),
@@ -131,41 +153,46 @@ export class Card extends Issue {
       columnId: this.columnId
     };
 
-    let theKanban = await KanbanMongo.KanbanMongoModel.findById(this.kanbanId);
+    let theKanban;
+    try {
+      theKanban = await KanbanMongo.KanbanMongoModel.findById(this.kanbanId);
+    } catch (error) {
+      console.error(
+        "<Error> Fail to get the kanban from the MongoDB whose ID is" +
+          this.kanbanId,
+        error
+      );
+    }
 
     // get the column
-    const theColumn = await KanbanColumn.getColumn(
-      this.kanbanId,
-      this.columnId
-    );
+    const theColumn = theKanban.columns.id(this.columnId);
     // if add the new card to the 'Done' column
     if (theColumn.name === "Done") {
-      // TODO: close the issue
+      // close the issue
       const theIssue = await Issue.getIssue(
         this.getOwner(),
         this.getRepos(),
         this.getIssueId()
       );
-      try {
-        const closeReturn = await theIssue.close(token);
-      } catch (error) {
-        console.log(error);
-      }
-      // TODO: delete it(issueId) from includeIssueIds in the Kanban
+
+      await theIssue.close(token);
+      // delete it(issueId) from includeIssueIds in the Kanban
       if (theKanban.includeIssueIds.includes(this.getIssueId()))
         theKanban.includeIssueIds = theKanban.includeIssueIds.filter(
           id => id !== this.getIssueId()
         );
-      // TODO: add it(issueId) to finishedIssueIds in the Kanban
+      // add it(issueId) to finishedIssueIds in the Kanban
       if (!theKanban.finishedIssueIds) theKanban.finishedIssueIds = [];
       if (!theKanban.finishedIssueIds.includes(theCard.issue_id))
         theKanban.finishedIssueIds.push(theCard.issue_id);
     } else {
+      // if save to the column except the 'DONE' column, add the card to the "includeIssueIds"
       if (!theKanban.includeIssueIds) theKanban.includeIssueIds = [];
       if (!theKanban.includeIssueIds.includes(theCard.issue_id))
         theKanban.includeIssueIds.push(theCard.issue_id);
     }
 
+    // add it to the column
     if (
       !theKanban.columns
         .id(this.columnId)
@@ -173,11 +200,19 @@ export class Card extends Issue {
     ) {
       theKanban.columns.id(this.columnId).cards.push(theCard);
     }
-    await theKanban.save();
+
+    try {
+      await theKanban.save();
+    } catch (error) {
+      console.error(
+        "<Error> Fail to save the kanban to the MongoDB whose id is " + theId,
+        error
+      );
+    }
     return theCard;
   }
 
-  // /***********************************************************************************
+  // /**
   //  * save the card
   //  * @returns the result of the save
   //  */
@@ -194,33 +229,59 @@ export class Card extends Issue {
   //   return result;
   // }
 
+  //--------------------------------------------------------------------------------------
+  // Some Static Functions
+  //--------------------------------------------------------------------------------------
+
   public static async deleteACard(
     kanbanId: string,
     columnId: string,
     cardId: string,
     token: string
   ) {
-    let theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
+    let theKanban;
+    try {
+      theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
+    } catch (error) {
+      console.error(
+        "<Error> Fail to get the kanban from the MongoDB whose id is " +
+          kanbanId,
+        error
+      );
+    }
+
+    // delete the card from the column
     const deletedCard = theKanban.columns.id(columnId).cards.id(cardId);
     deletedCard.remove();
 
     // get the column
-    const column = await KanbanColumn.getColumn(kanbanId, columnId);
+    const column = await theKanban.columns.id(columnId);
     // if remove the card from "Done" column
-    const theCard = await Card.getCardById(kanbanId, columnId, cardId);
+    const { issue_id, number, owner, repos } = deletedCard;
+    const theIssue = new Issue(
+      issue_id,
+      undefined,
+      undefined,
+      owner,
+      repos,
+      undefined,
+      number
+    );
+
     if (column.name === "Done") {
       // open the issue
-      await theCard.open(token);
-      // TODO: remove it(issueId) from finishedIssueIds in the Kanban
-      if (theKanban.finishedIssueIds.includes(theCard.getIssueId()))
+      await theIssue.open(token);
+      // remove it(issueId) from finishedIssueIds in the Kanban
+      if (theKanban.finishedIssueIds.includes(issue_id))
         theKanban.finishedIssueIds = theKanban.finishedIssueIds.filter(
-          id => id !== theCard.getIssueId()
+          id => id !== issue_id
+        );
+    } else {
+      if (theKanban.includeIssueIds.includes(issue_id))
+        theKanban.includeIssueIds = theKanban.includeIssueIds.filter(
+          id => id !== issue_id
         );
     }
-    if (theKanban.includeIssueIds.includes(theCard.getIssueId()))
-      theKanban.includeIssueIds = theKanban.includeIssueIds.filter(
-        id => id !== deletedCard.issue_id
-      );
 
     theKanban.save();
     return deletedCard;
@@ -231,7 +292,16 @@ export class Card extends Issue {
     columnId: string,
     cardId: string
   ): Promise<Card> {
-    const theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
+    let theKanban;
+    try {
+      theKanban = await KanbanMongo.KanbanMongoModel.findById(kanbanId);
+    } catch (error) {
+      console.error(
+        "<Error> Fail to find the kanban in the MongoDB whose id is " +
+          kanbanId,
+        error
+      );
+    }
     const theCard = theKanban.columns.id(columnId).cards.id(cardId);
     const {
       issue_id,

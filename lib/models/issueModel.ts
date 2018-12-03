@@ -86,12 +86,24 @@ export class Issue {
    */
   public async close(token): Promise<any> {
     this.state = "close";
-    return (await github(token).patch(
-      `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
-      {
-        state: "closed"
-      }
-    )).data;
+
+    let result;
+    try {
+      result = (await github(token).patch(
+        `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
+        {
+          state: "closed"
+        }
+      )).data;
+    } catch (error) {
+      console.error(
+        "<Error> Fail to close the issue whose url is " +
+          `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
+        error
+      );
+    }
+
+    return result;
   }
 
   /**
@@ -99,12 +111,25 @@ export class Issue {
    */
   public async open(token): Promise<any> {
     this.state = "open";
-    return (await github(token).patch(
-      `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
-      {
-        state: "open"
-      }
-    )).data;
+
+    let result;
+
+    try {
+      result = (await github(token).patch(
+        `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
+        {
+          state: "open"
+        }
+      )).data;
+    } catch (error) {
+      console.error(
+        "<Error> Fail to open the issue whose url is " +
+          `/repos/${this.owner}/${this.repos}/issues/${this.number}`,
+        error
+      );
+    }
+
+    return result;
   }
 
   // /*

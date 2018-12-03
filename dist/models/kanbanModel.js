@@ -8,112 +8,225 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const githubAPI_1 = require("remoteConnection/github/githubAPI");
+//-----------------------------------------------------------------------
+// All of the Kanban related mongo data
+//------------------------------------------------------------------------------
+const mongoose = require("mongoose");
+const kanbanColumnModel_1 = require("./kanbanColumnModel");
+const cardModel_1 = require("./cardModel");
+class KanbanMongo {
+}
+/**
+ * mongo related data: Schema and Model
+ * _id: string (auto created by mongoose)
+ * name: string
+ * state: string
+ * due: Date
+ * projectId: string
+ * columns: KanbanColumn[]
+ * cards: Card[]
+ */
+KanbanMongo.KanbanSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    state: {
+        type: String,
+        required: true
+    },
+    due: {
+        type: Date,
+        required: true
+    },
+    created: {
+        type: Date,
+        required: true
+    },
+    projectId: {
+        type: String,
+        required: true
+    },
+    columns: {
+        type: [kanbanColumnModel_1.KanbanColumnMongo.KanbanColumnMongoModel.schema],
+        default: []
+    },
+    cards: {
+        type: [cardModel_1.CardMongo.CardMongoModel.schema],
+        default: []
+    },
+    includeIssueIds: [String],
+    finishedIssueIds: [String]
+});
+KanbanMongo.KanbanMongoModel = mongoose.model("kanbans", KanbanMongo.KanbanSchema);
+exports.KanbanMongo = KanbanMongo;
+const projectModel_1 = require("./projectModel");
 class Kanban {
-    constructor(name, body, state, columns, ownerName, reposName, id) {
+    constructor(id, name, state, due, projectId, columns, includeIssueIds, finishedIssueIds, cards, ownerName, created) {
         if (id)
             this.id = id;
-        this.name = name;
-        this.body = body;
-        if (state !== "open" && state !== "close")
+        if (name)
+            this.name = name;
+        if (state && state !== "open" && state !== "close")
             throw new RangeError("The state is neither 'close' nor 'open'");
-        this.columns = [];
-        for (let column of columns) {
-            this.columns.push(column);
-        }
-        this.ownerName = ownerName;
-        this.reposName = reposName;
+        this.state = state;
+        if (due)
+            this.due = due;
+        if (projectId)
+            this.projectId = projectId;
+        if (includeIssueIds)
+            this.includeIssueIds = includeIssueIds.slice(0);
+        if (finishedIssueIds)
+            this.finishedIssueIds = finishedIssueIds.slice(0);
+        if (ownerName)
+            this.ownerName = ownerName;
+        if (created)
+            this.created = created;
+        if (columns)
+            this.columns = columns.slice(0);
+        if (cards)
+            this.cards = cards.slice(0);
     }
-    /**
-     *
-     */
+    //--------------------------------------------------------------------------
+    // Getter ana Setter Functions
+    //--------------------------------------------------------------------------
     getId() {
         return this.id;
     }
-    /**
-     *
-     */
-    getOwnerName() {
-        return this.ownerName;
-    }
-    /**
-     *
-     */
-    getReposName() {
-        return this.reposName;
-    }
-    /**
-     *
-     */
     getName() {
         return this.name;
     }
-    /**
-     *
-     * @param name
-     */
     setName(name) {
         this.name = name;
     }
-    /**
-     *
-     */
-    getBody() {
-        return this.body;
-    }
-    /**
-     *
-     * @param body
-     */
-    setBody(body) {
-        this.body = body;
-    }
-    /**
-     *
-     */
     getState() {
         return this.state;
     }
-    /**
-     *
-     */
     open() {
         this.state = "open";
     }
-    /**
-     *
-     */
     close() {
         this.state = "close";
     }
-    /**
-     *
-     */
-    getColumns() {
-        let result = [];
-        for (let column of this.columns) {
-            result.push(column);
-        }
-        return result;
+    getDue() {
+        return this.due;
     }
+    setDue(due) {
+        this.due = due;
+    }
+    getProjectId() {
+        return this.projectId;
+    }
+    getColumns() {
+        return this.columns.slice(0);
+    }
+    getIncludeIssueIds() {
+        return this.includeIssueIds.slice(0);
+    }
+    getFinishedIssueIds() {
+        return this.finishedIssueIds.slice(0);
+    }
+    getCards() {
+        return this.cards.slice(0);
+    }
+    getOwner() {
+        return this.ownerName;
+    }
+    getCreatedDate() {
+        return this.created;
+    }
+    //------------------------------------------------------------------------------
+    // Some Functions
+    //------------------------------------------------------------------------------
     /**
-     *
+     * Saved kanban to the MongoDB
      */
-    save() {
+    saveToMongo() {
         return __awaiter(this, void 0, void 0, function* () {
-            const post = {
+            // save to 'kanbans' document
+            let theKanban = {
                 name: this.name,
-                body: this.body
+                state: this.state,
+                due: this.due,
+                created: new Date(),
+                projectId: this.projectId,
+                includeIssueIds: this.includeIssueIds,
+                finishedIssueIds: this.finishedIssueIds
+                // need fixed later...
+                // columns: [...this.columns],
+                // cards: [...this.cards]
             };
-            let result;
             try {
-                result = yield githubAPI_1.githubApiPreview.post(`/repos/${this.ownerName}/${this.reposName}/projects`, post);
+                theKanban = yield new KanbanMongo.KanbanMongoModel(theKanban).save(); // the kanban is the data stored in the db
             }
             catch (error) {
-                throw error;
+                console.error("<Error> Fail to save the kanban whose name is " + this.name, error);
             }
-            this.id = result.data.node_id;
-            return result;
+            for (let col of this.columns) {
+                col.setKanbanId(theKanban["id"]);
+                yield col.saveToMongo();
+            }
+            // change the 'project' document, add the kanban id to the project
+            let theProject;
+            try {
+                theProject = yield projectModel_1.ProjectMongo.ProjectMongoModel.findById(this.projectId);
+            }
+            catch (error) {
+                console.error("<Error> Fail to find the project in the MongoDB whose ID is " +
+                    this.projectId, error);
+            }
+            if (!theProject.kanbanIds)
+                theProject.kanbanIds = [];
+            theProject.kanbanIds.push(theKanban["id"]); // push the kanban id to project document
+            let kanbanObj;
+            try {
+                kanbanObj = yield new projectModel_1.ProjectMongo.ProjectMongoModel(theProject).save();
+            }
+            catch (error) {
+                console.error("<Error> Fail to saved the kanban whose id is ", error);
+            }
+            return [theKanban, kanbanObj];
+        });
+    }
+    //------------------------------------------------------------------------------------
+    // Some Static Functions
+    //------------------------------------------------------------------------------------
+    /**
+     * get the kanbans of the project with given project ID
+     * @param projectId
+     */
+    static getAllKanbansOfProject(projectId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const theProject = yield projectModel_1.ProjectMongo.ProjectMongoModel.findById(projectId);
+            const kanbanIds = theProject.kanbanIds;
+            const kanbans = [];
+            for (const kanbanId of kanbanIds) {
+                const theKanban = yield KanbanMongo.KanbanMongoModel.findById(kanbanId);
+                kanbans.push(theKanban);
+            }
+            return kanbans;
+        });
+    }
+    static getKanbanById(kanbanId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const theKanban = yield KanbanMongo.KanbanMongoModel.findById(kanbanId);
+            return theKanban;
+        });
+    }
+    static newGetKanbanById(kanbanId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let theKanban;
+            try {
+                theKanban = yield KanbanMongo.KanbanMongoModel.findById(kanbanId);
+            }
+            catch (error) {
+                console.error("<Error> Fail to get Kanban from MongoDB whose id is " + kanbanId, error);
+            }
+            const { id, name, state, created, due, projectId } = theKanban;
+            const includeIssueIds = theKanban.includeIssueIds.slice(0);
+            const finishedIssueIds = theKanban.finishedIssueIds.slice(0);
+            const kanban = new Kanban(id, name, state, due, projectId, undefined, includeIssueIds, finishedIssueIds);
+            return kanban;
         });
     }
 }

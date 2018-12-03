@@ -27,7 +27,8 @@ class AuthorizationRoutes {
             return res.status(200).send(url.format({
                 pathname: auth.getGithubAuthUrl(),
                 query: {
-                    client_id: auth.getClientId()
+                    client_id: auth.getClientId(),
+                    scope: auth.getScope()
                 }
             }));
         }));

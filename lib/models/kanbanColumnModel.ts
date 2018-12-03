@@ -72,7 +72,7 @@ export class KanbanColumn {
     let theCards = [];
     if (this.cards) {
       for (const card of this.cards) {
-        const cardObj = card.toCardOject();
+        const cardObj = card.toCardObject();
         cardObj.kanbanId = this.kanbanId;
         theCards.push(cardObj);
       }
@@ -80,15 +80,16 @@ export class KanbanColumn {
 
     //if it has not id, add directly
     if (!this.id) {
-      KanbanMongo.KanbanMongoModel.findById(this.kanbanId, (error, doc) => {
-        doc.columns.push({
-          name: this.name,
-          kanbanId: this.kanbanId,
-          cards: theCards
-        });
-        this.id = doc._id;
-        doc.save();
+      const theKanban = await KanbanMongo.KanbanMongoModel.findById(
+        this.kanbanId
+      );
+      theKanban.columns.push({
+        name: this.name,
+        kanbanId: this.kanbanId,
+        cards: theCards
       });
+      this.id = theKanban.id;
+      theKanban.save();
       if (this.cards) {
         for (const card of this.cards) {
           await card.saveToMongo();

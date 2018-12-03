@@ -1,6 +1,8 @@
 import { Request, Response, Application, Router } from "express";
 import { Authorization } from "./../models/authorization";
 import { Project } from "../models/projectModel";
+import { Repository } from "../models/repositoryModel";
+import { Kanban } from "../models/kanbanModel";
 
 export class ProjectRoutes {
   private router: Router;
@@ -43,6 +45,39 @@ export class ProjectRoutes {
       const projectName: string = theProject.getName();
       res.status(200).send(projectName);
     });
+
+    this.router.get(
+      "/overview/:projectId",
+      async (req: Request, res: Response) => {
+        const projectId: string = req.params.projectId;
+        const theProject: Project = await Project.getFromMongo(projectId);
+        const theRepositories: Repository[] = theProject.getRepositories();
+        const theNumOfRepos: number = theRepositories.length;
+        const theKanbanIds: string[] = theProject.getKanbanIds();
+        const theNumOfKanbans: number = theKanbanIds.length;
+
+        let theNumOfIncludeIssues: number = 0;
+        let theNumOfFinishedIssues: number = 0;
+
+        // get kanban
+        for (const kanbanId of theKanbanIds) {
+          const theKanban = await Kanban.getKanbanById(kanbanId);
+          theNumOfIncludeIssues += theKanban.includeIssueIds
+            ? theKanban.includeIssueIds.length
+            : 0;
+          theNumOfFinishedIssues += theKanban.finishedIssueIds
+            ? theKanban.finishedIssueIds.length
+            : 0;
+        }
+
+        res.status(200).send({
+          theNumOfRepos,
+          theNumOfKanbans,
+          theNumOfIncludeIssues,
+          theNumOfFinishedIssues
+        });
+      }
+    );
   }
 
   public routes(app: Application): void {
