@@ -173,7 +173,7 @@ export class Kanban {
   /**
    * Saved kanban to the MongoDB
    */
-  public async saveToMongo() {
+  public async saveToMongo(token: string) {
     // save to 'kanbans' document
 
     let theKanban = {
@@ -199,7 +199,7 @@ export class Kanban {
 
     for (let col of this.columns) {
       col.setKanbanId(theKanban["id"]);
-      await col.saveToMongo();
+      await col.saveToMongo(token);
     }
 
     // change the 'project' document, add the kanban id to the project

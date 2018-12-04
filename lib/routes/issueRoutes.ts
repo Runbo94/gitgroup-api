@@ -13,9 +13,11 @@ export class IssueRoutes {
      * get all issue of the repository
      */
     this.router.get("/:name/:repos", async (req: Request, res: Response) => {
+      const token = req.headers.authorization;
       const issues = await Issue.getAllIssues(
         req.params.name,
-        req.params.repos
+        req.params.repos,
+        token
       );
       res.status(200).send(issues);
     });
@@ -29,11 +31,13 @@ export class IssueRoutes {
         const reposNames: string[] = await Project.getReposNamesOfProject(
           req.params.projectId
         );
+        const token = req.headers.authorization;
         const result: Issue[] = [];
         for (let reposName of reposNames) {
           const issues: Issue[] = await Issue.getAllIssues(
             req.params.username,
-            reposName
+            reposName,
+            token
           );
           result.push(...issues);
         }
@@ -47,7 +51,12 @@ export class IssueRoutes {
       async (req: Request, res: Response) => {
         const { userName, reposName, issueId } = req.params;
         const token = req.headers.authorization;
-        const theIssue = await Issue.getIssue(userName, reposName, issueId);
+        const theIssue = await Issue.getIssue(
+          userName,
+          reposName,
+          issueId,
+          token
+        );
         const result = await theIssue.close(token);
         res.status(200).send(result);
       }

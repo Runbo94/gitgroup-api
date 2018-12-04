@@ -11,9 +11,11 @@ export class CardRoutes {
 
     /**get all the issue card, same with the get issue */
     this.router.get("/:name/:repos", async (req: Request, res: Response) => {
+      const token = req.headers.authorization;
       const issues = await Issue.getAllIssues(
         req.params.name,
-        req.params.repos
+        req.params.repos,
+        token
       );
       res.status(200).send(issues);
     });
@@ -24,11 +26,13 @@ export class CardRoutes {
         const reposNames: string[] = await Project.getReposNamesOfProject(
           req.params.projectId
         );
+        const token = req.params.authorization;
         const result: Issue[] = [];
         for (let reposName of reposNames) {
           const issues: Issue[] = await Issue.getAllIssues(
             req.params.username,
-            reposName
+            reposName,
+            token
           );
           result.push(...issues);
         }

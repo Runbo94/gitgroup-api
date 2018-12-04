@@ -176,7 +176,8 @@ export class Repository {
       // TODO: optimize there!!!
       const issues: Issue[] = await Issue.getAllIssues(
         theRepository.owner.login,
-        theRepository.name
+        theRepository.name,
+        token
       );
 
       repositoryObjs.push(

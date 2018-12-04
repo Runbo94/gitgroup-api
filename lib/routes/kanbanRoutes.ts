@@ -21,6 +21,7 @@ export class KanbanRoutes {
      */
     this.router.post("/new", async (req: Request, res: Response) => {
       let { name, due, projectId, columns } = req.body;
+      const token = req.headers.authorization;
 
       // create column
       if (!columns) {
@@ -42,7 +43,7 @@ export class KanbanRoutes {
         [],
         []
       );
-      const savedKanban = await theKanban.saveToMongo();
+      const savedKanban = await theKanban.saveToMongo(token);
       res.status(200).send(savedKanban);
     });
 

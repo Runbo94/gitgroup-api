@@ -133,7 +133,7 @@ export class Card extends Issue {
    * save the card
    * @param token used to save issue when the card save to done column
    */
-  public async saveToMongo(token?: string) {
+  public async saveToMongo(token: string) {
     // create a new mongo ID
     const theId = this.id
       ? mongoose.Types.ObjectId(this.id)
@@ -172,7 +172,8 @@ export class Card extends Issue {
       const theIssue = await Issue.getIssue(
         this.getOwner(),
         this.getRepos(),
-        this.getIssueId()
+        this.getIssueId(),
+        token
       );
 
       await theIssue.close(token);

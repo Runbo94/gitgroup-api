@@ -68,7 +68,7 @@ export class KanbanColumn {
     return cards;
   }
 
-  public async saveToMongo() {
+  public async saveToMongo(token: string) {
     let theCards = [];
     if (this.cards) {
       for (const card of this.cards) {
@@ -92,7 +92,7 @@ export class KanbanColumn {
       theKanban.save();
       if (this.cards) {
         for (const card of this.cards) {
-          await card.saveToMongo();
+          await card.saveToMongo(token);
         }
       }
     }

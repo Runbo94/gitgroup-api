@@ -164,11 +164,12 @@ export class Issue {
    */
   public static async getAllIssues(
     username: string,
-    reposName: string
+    reposName: string,
+    token: string
   ): Promise<any[]> {
     let theIssues;
     try {
-      theIssues = (await githubApiPreview.get(
+      theIssues = (await github(token).get(
         `/repos/${username}/${reposName}/issues`
       )).data;
     } catch (error) {
@@ -206,11 +207,12 @@ export class Issue {
   public static async getIssue(
     username: string,
     reposName: string,
-    issueId: string
+    issueId: string,
+    token: string
   ): Promise<any> {
     let theIssues;
     try {
-      theIssues = (await githubApiPreview.get(
+      theIssues = (await github(token).get(
         `/repos/${username}/${reposName}/issues`
       )).data;
     } catch (error) {
