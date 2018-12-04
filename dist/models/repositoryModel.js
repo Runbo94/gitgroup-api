@@ -134,7 +134,7 @@ class Repository {
             let repositoryObjs = [];
             for (let theRepository of theRepositories) {
                 // TODO: optimize there!!!
-                const issues = yield issueModel_1.Issue.getAllIssues(theRepository.owner.login, theRepository.name);
+                const issues = yield issueModel_1.Issue.getAllIssues(theRepository.owner.login, theRepository.name, token);
                 repositoryObjs.push(new Repository(theRepository.node_id, theRepository.name, theRepository.owner.login, theRepository.description, theRepository.html_url, issues));
             }
             return repositoryObjs;

@@ -18,7 +18,8 @@ class IssueRoutes {
          * get all issue of the repository
          */
         this.router.get("/:name/:repos", (req, res) => __awaiter(this, void 0, void 0, function* () {
-            const issues = yield issueModel_1.Issue.getAllIssues(req.params.name, req.params.repos);
+            const token = req.headers.authorization;
+            const issues = yield issueModel_1.Issue.getAllIssues(req.params.name, req.params.repos, token);
             res.status(200).send(issues);
         }));
         /**
@@ -26,9 +27,10 @@ class IssueRoutes {
          */
         this.router.get("/project_issues/:username/:projectId", (req, res) => __awaiter(this, void 0, void 0, function* () {
             const reposNames = yield projectModel_1.Project.getReposNamesOfProject(req.params.projectId);
+            const token = req.headers.authorization;
             const result = [];
             for (let reposName of reposNames) {
-                const issues = yield issueModel_1.Issue.getAllIssues(req.params.username, reposName);
+                const issues = yield issueModel_1.Issue.getAllIssues(req.params.username, reposName, token);
                 result.push(...issues);
             }
             res.status(200).send(result);
@@ -37,7 +39,7 @@ class IssueRoutes {
         this.router.get("/close/:userName/:reposName/:issueId", (req, res) => __awaiter(this, void 0, void 0, function* () {
             const { userName, reposName, issueId } = req.params;
             const token = req.headers.authorization;
-            const theIssue = yield issueModel_1.Issue.getIssue(userName, reposName, issueId);
+            const theIssue = yield issueModel_1.Issue.getIssue(userName, reposName, issueId, token);
             const result = yield theIssue.close(token);
             res.status(200).send(result);
         }));

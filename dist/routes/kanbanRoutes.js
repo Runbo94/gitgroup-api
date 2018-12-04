@@ -28,6 +28,7 @@ class KanbanRoutes {
          */
         this.router.post("/new", (req, res) => __awaiter(this, void 0, void 0, function* () {
             let { name, due, projectId, columns } = req.body;
+            const token = req.headers.authorization;
             // create column
             if (!columns) {
                 const toDoCol = new kanbanColumnModel_1.KanbanColumn(undefined, "To Do");
@@ -38,7 +39,7 @@ class KanbanRoutes {
             }
             // create new Kanban object
             const theKanban = new kanbanModel_1.Kanban(undefined, name, "open", due, projectId, columns, [], [], []);
-            const savedKanban = yield theKanban.saveToMongo();
+            const savedKanban = yield theKanban.saveToMongo(token);
             res.status(200).send(savedKanban);
         }));
         /**

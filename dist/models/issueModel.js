@@ -131,11 +131,11 @@ class Issue {
      * @param username
      * @param reposName
      */
-    static getAllIssues(username, reposName) {
+    static getAllIssues(username, reposName, token) {
         return __awaiter(this, void 0, void 0, function* () {
             let theIssues;
             try {
-                theIssues = (yield githubAPI_1.githubApiPreview.get(`/repos/${username}/${reposName}/issues`)).data;
+                theIssues = (yield githubAPI_1.github(token).get(`/repos/${username}/${reposName}/issues`)).data;
             }
             catch (error) {
                 console.error("<Error> Fail to get the issues from " +
@@ -159,11 +159,11 @@ class Issue {
      * @param reposName the name of repos
      * @param issueId the id of issue
      */
-    static getIssue(username, reposName, issueId) {
+    static getIssue(username, reposName, issueId, token) {
         return __awaiter(this, void 0, void 0, function* () {
             let theIssues;
             try {
-                theIssues = (yield githubAPI_1.githubApiPreview.get(`/repos/${username}/${reposName}/issues`)).data;
+                theIssues = (yield githubAPI_1.github(token).get(`/repos/${username}/${reposName}/issues`)).data;
             }
             catch (error) {
                 console.error("<Error> Fail to get the issues from " +

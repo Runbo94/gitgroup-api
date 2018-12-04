@@ -61,7 +61,7 @@ class KanbanColumn {
         }
         return cards;
     }
-    saveToMongo() {
+    saveToMongo(token) {
         return __awaiter(this, void 0, void 0, function* () {
             let theCards = [];
             if (this.cards) {
@@ -83,7 +83,7 @@ class KanbanColumn {
                 theKanban.save();
                 if (this.cards) {
                     for (const card of this.cards) {
-                        yield card.saveToMongo();
+                        yield card.saveToMongo(token);
                     }
                 }
             }

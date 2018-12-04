@@ -153,7 +153,7 @@ class Card extends issueModel_1.Issue {
             // if add the new card to the 'Done' column
             if (theColumn.name === "Done") {
                 // close the issue
-                const theIssue = yield issueModel_1.Issue.getIssue(this.getOwner(), this.getRepos(), this.getIssueId());
+                const theIssue = yield issueModel_1.Issue.getIssue(this.getOwner(), this.getRepos(), this.getIssueId(), token);
                 yield theIssue.close(token);
                 // delete it(issueId) from includeIssueIds in the Kanban
                 if (theKanban.includeIssueIds.includes(this.getIssueId()))

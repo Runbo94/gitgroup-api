@@ -17,14 +17,16 @@ class CardRoutes {
         this.router = express_1.Router();
         /**get all the issue card, same with the get issue */
         this.router.get("/:name/:repos", (req, res) => __awaiter(this, void 0, void 0, function* () {
-            const issues = yield issueModel_1.Issue.getAllIssues(req.params.name, req.params.repos);
+            const token = req.headers.authorization;
+            const issues = yield issueModel_1.Issue.getAllIssues(req.params.name, req.params.repos, token);
             res.status(200).send(issues);
         }));
         this.router.get("/project_cards/:username/:projectId", (req, res) => __awaiter(this, void 0, void 0, function* () {
             const reposNames = yield projectModel_1.Project.getReposNamesOfProject(req.params.projectId);
+            const token = req.params.authorization;
             const result = [];
             for (let reposName of reposNames) {
-                const issues = yield issueModel_1.Issue.getAllIssues(req.params.username, reposName);
+                const issues = yield issueModel_1.Issue.getAllIssues(req.params.username, reposName, token);
                 result.push(...issues);
             }
             res.status(200).send(result);

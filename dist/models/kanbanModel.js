@@ -141,7 +141,7 @@ class Kanban {
     /**
      * Saved kanban to the MongoDB
      */
-    saveToMongo() {
+    saveToMongo(token) {
         return __awaiter(this, void 0, void 0, function* () {
             // save to 'kanbans' document
             let theKanban = {
@@ -164,7 +164,7 @@ class Kanban {
             }
             for (let col of this.columns) {
                 col.setKanbanId(theKanban["id"]);
-                yield col.saveToMongo();
+                yield col.saveToMongo(token);
             }
             // change the 'project' document, add the kanban id to the project
             let theProject;
