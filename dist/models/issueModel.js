@@ -133,7 +133,14 @@ class Issue {
      */
     static getAllIssues(username, reposName) {
         return __awaiter(this, void 0, void 0, function* () {
-            const theIssues = (yield githubAPI_1.githubApiPreview.get(`/repos/${username}/${reposName}/issues`)).data;
+            let theIssues;
+            try {
+                theIssues = (yield githubAPI_1.githubApiPreview.get(`/repos/${username}/${reposName}/issues`)).data;
+            }
+            catch (error) {
+                console.error("<Error> Fail to get the issues from " +
+                    `/repos/${username}/${reposName}/issues`, error);
+            }
             if (!theIssues)
                 return theIssues;
             let issues = [];
@@ -154,7 +161,14 @@ class Issue {
      */
     static getIssue(username, reposName, issueId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const theIssues = (yield githubAPI_1.githubApiPreview.get(`/repos/${username}/${reposName}/issues`)).data;
+            let theIssues;
+            try {
+                theIssues = (yield githubAPI_1.githubApiPreview.get(`/repos/${username}/${reposName}/issues`)).data;
+            }
+            catch (error) {
+                console.error("<Error> Fail to get the issues from " +
+                    `/repos/${username}/${reposName}/issues`, error);
+            }
             if (!theIssues)
                 return theIssues;
             let theIssue = theIssues.find(issue => issue.node_id === issueId);
