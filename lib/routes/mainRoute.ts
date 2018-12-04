@@ -13,7 +13,7 @@ export class MainRoute {
       res.header("Access-Control-Allow-Origin", "*");
       res.header(
         "Access-Control-Allow-Methods",
-        "GET, PUT, POST, DELETE, PATCH"
+        "GET, PUT, POST, DELETE, PATCH, OPTION"
       );
       res.header(
         "Access-Control-Allow-Headers",
