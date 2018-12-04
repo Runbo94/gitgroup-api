@@ -166,9 +166,18 @@ export class Issue {
     username: string,
     reposName: string
   ): Promise<any[]> {
-    const theIssues: any = (await githubApiPreview.get(
-      `/repos/${username}/${reposName}/issues`
-    )).data;
+    let theIssues;
+    try {
+      theIssues = (await githubApiPreview.get(
+        `/repos/${username}/${reposName}/issues`
+      )).data;
+    } catch (error) {
+      console.error(
+        "<Error> Fail to get the issues from " +
+          `/repos/${username}/${reposName}/issues`,
+        error
+      );
+    }
     if (!theIssues) return theIssues;
     let issues: Issue[] = [];
     for (let data of theIssues) {
@@ -199,9 +208,18 @@ export class Issue {
     reposName: string,
     issueId: string
   ): Promise<any> {
-    const theIssues: any = (await githubApiPreview.get(
-      `/repos/${username}/${reposName}/issues`
-    )).data;
+    let theIssues;
+    try {
+      theIssues = (await githubApiPreview.get(
+        `/repos/${username}/${reposName}/issues`
+      )).data;
+    } catch (error) {
+      console.error(
+        "<Error> Fail to get the issues from " +
+          `/repos/${username}/${reposName}/issues`,
+        error
+      );
+    }
     if (!theIssues) return theIssues;
 
     let theIssue = theIssues.find(issue => issue.node_id === issueId);

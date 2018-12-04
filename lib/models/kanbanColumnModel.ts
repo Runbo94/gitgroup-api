@@ -113,7 +113,7 @@ export class KanbanColumn {
       );
       this.id = result.data.node_id;
     } catch (error) {
-      throw error;
+      console.error("<Error> Fail to post the column to the github.", error);
     }
     return result;
   }
