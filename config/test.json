@@ -1,8 +1,6 @@
 {
-  "mongo": {
-    "url": "ds137283.mlab.com:37283/gitgroup"
-  },
   "github": {
-    "apiUrl": "https://api.github.com"
+    "apiUrl": "https://api.github.com",
+    "scope": "repo user"
   }
 }

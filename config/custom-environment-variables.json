@@ -5,6 +5,8 @@
   },
   "mongo": {
     "user": "mongo_user",
-    "password": "mongo_password"
-  }
+    "password": "mongo_password",
+    "url": "mongo_url"
+  },
+  "home_page_url": "home_page_url"
 }

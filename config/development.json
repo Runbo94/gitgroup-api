@@ -1,9 +1,6 @@
 {
-  "mongo": {
-    "url": "ds137283.mlab.com:37283/gitgroup"
-  },
   "github": {
-    "apiUrl": "https://api.github.com"
-  },
-  "home_page_url": "http://localhost:3000/"
+    "apiUrl": "https://api.github.com",
+    "scope": "repo user"
+  }
 }
